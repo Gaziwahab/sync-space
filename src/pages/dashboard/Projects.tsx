@@ -150,32 +150,34 @@ const Projects = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Projects</h1>
-          <p className="text-muted-foreground text-sm">Manage your workspace projects</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">Projects</h1>
+          <p className="text-muted-foreground mt-1">Manage your workspace projects</p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="clay-btn">
           <Plus className="h-4 w-4 mr-2" /> New Project
         </Button>
       </div>
 
       {projects?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-          <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No projects yet</h2>
-          <p className="text-muted-foreground mb-4">Create your first project to get started</p>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" /> New Project
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center clay-panel rounded-3xl p-12 max-w-2xl mx-auto shadow-xl border border-white/5">
+          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+            <FolderKanban className="h-10 w-10 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3 tracking-tight">No projects yet</h2>
+          <p className="text-muted-foreground mb-8 text-lg">Create your first project to give your AI team some work!</p>
+          <Button onClick={openCreate} className="clay-btn px-8 py-6 text-base">
+            <Plus className="h-5 w-5 mr-2" /> Create First Project
           </Button>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects?.map((p) => (
-            <Card key={p.id} className="p-4 flex flex-col gap-3">
+            <Card key={p.id} className="clay-panel border border-white/5 p-5 flex flex-col gap-4 hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 interactive group">
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold truncate">{p.name}</h3>
+                  <h3 className="font-bold text-lg truncate group-hover:text-primary transition-colors">{p.name}</h3>
                   {p.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{p.description}</p>
                   )}
@@ -204,8 +206,7 @@ const Projects = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
+                    className="clay-btn h-8 text-xs px-4"
                     onClick={() => navigate(`/dashboard/projects/${p.id}`)}
                   >
                     <Hammer className="h-3 w-3 mr-1" /> Build
@@ -241,8 +242,8 @@ const Projects = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isSaving}>
+            <Button variant="outline" className="clay-panel" onClick={closeDialog}>Cancel</Button>
+            <Button className="clay-btn" onClick={handleSubmit} disabled={isSaving}>
               {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editing ? "Save" : "Create"}
             </Button>

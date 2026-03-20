@@ -1,10 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
-@tailwind utilities;@layer base {
+@tailwind utilities;
+
+@layer base {
   :root {
-    --background: 220 20% 97%;
+    /* Base Colors - More vibrant and premium light mode */
+    --background: 210 20% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -13,81 +17,83 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 252 85% 60%;
+    --primary: 250 85% 60%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 92%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 15% 46%;
 
-    --accent: 168 84% 44%;
+    --accent: 310 85% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 252 85% 60%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 250 85% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 210 20% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 252 85% 60%;
+    --sidebar-primary: 250 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 240 4.8% 90%;
     --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 252 85% 60%;
+    --sidebar-border: 220 13% 85%;
+    --sidebar-ring: 250 85% 60%;
 
-    --glow: 252 85% 60%;
-    --success: 168 84% 44%;
+    /* Premium Accents */
+    --glow: 250 85% 60%;
+    --success: 150 84% 44%;
     --warning: 38 92% 50%;
   }
 
   .dark {
-    --background: 228 25% 8%;
+    /* Base Colors - Sleek, deep dark mode */
+    --background: 230 25% 6%;
     --foreground: 220 20% 95%;
 
-    --card: 228 22% 12%;
+    --card: 230 20% 10%;
     --card-foreground: 220 20% 95%;
 
-    --popover: 228 22% 12%;
+    --popover: 230 20% 10%;
     --popover-foreground: 220 20% 95%;
 
-    --primary: 252 85% 65%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 250 90% 70%;
+    --primary-foreground: 230 25% 6%;
 
-    --secondary: 228 18% 18%;
+    --secondary: 230 18% 16%;
     --secondary-foreground: 220 20% 95%;
 
-    --muted: 228 18% 16%;
-    --muted-foreground: 220 9% 55%;
+    --muted: 230 18% 14%;
+    --muted-foreground: 220 15% 65%;
 
-    --accent: 168 84% 50%;
+    --accent: 310 90% 65%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 50%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 18% 20%;
-    --input: 228 18% 20%;
-    --ring: 252 85% 65%;
+    --border: 230 18% 18%;
+    --input: 230 18% 18%;
+    --ring: 250 90% 70%;
 
-    --sidebar-background: 228 25% 10%;
+    --sidebar-background: 230 25% 8%;
     --sidebar-foreground: 220 20% 90%;
-    --sidebar-primary: 252 85% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 18% 16%;
+    --sidebar-primary: 250 90% 70%;
+    --sidebar-primary-foreground: 230 25% 6%;
+    --sidebar-accent: 230 18% 14%;
     --sidebar-accent-foreground: 220 20% 90%;
-    --sidebar-border: 228 18% 18%;
-    --sidebar-ring: 252 85% 65%;
+    --sidebar-border: 230 18% 16%;
+    --sidebar-ring: 250 90% 70%;
 
-    --glow: 252 85% 65%;
-    --success: 168 84% 50%;
+    --glow: 250 90% 70%;
+    --success: 150 84% 50%;
     --warning: 38 92% 55%;
   }
 }
@@ -98,12 +104,18 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans transition-colors duration-300;
-    font-family: 'Space Grotesk', sans-serif;
+    @apply bg-background text-foreground font-sans transition-colors duration-500 ease-in-out;
+    font-family: 'Outfit', sans-serif;
+    /* Soft mesh gradient background */
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(var(--primary), 0.05), transparent 40%),
+      radial-gradient(circle at 85% 30%, rgba(var(--accent), 0.05), transparent 40%);
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.02em;
   }
 
   code, pre, .font-mono {
@@ -113,19 +125,116 @@
 
 @layer utilities {
   .glass {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50;
+    @apply bg-card/40 backdrop-blur-2xl border border-white/20 dark:border-white/10;
   }
 
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 60px hsl(var(--primary) / 0.1);
-  }
-
-  .glow-accent {
-    box-shadow: 0 0 20px hsl(var(--accent) / 0.3), 0 0 60px hsl(var(--accent) / 0.1);
-  }
-
+  /* Text Gradients */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
   }
+
+  .text-gradient-purple {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #a855f7, #ec4899);
+  }
+
+  /* 3D Claymorphism System */
+  /* Premium, deep 3D cards */
+  .clay-card {
+    @apply bg-card rounded-[2rem] border-0 transition-all duration-300;
+    box-shadow: 
+      /* Outer depth drop shadow */
+      16px 16px 32px -10px rgba(0, 0, 0, 0.08),
+      -12px -12px 32px -10px rgba(255, 255, 255, 0.9),
+      /* Soft inner highlight */
+      inset 2px 2px 5px rgba(255, 255, 255, 0.8),
+      /* Inner shadow for thickness */
+      inset -1px -1px 3px rgba(0, 0, 0, 0.03);
+  }
+
+  .dark .clay-card {
+    @apply bg-card;
+    box-shadow: 
+      /* Outer depth drop shadow */
+      16px 16px 32px -10px rgba(0, 0, 0, 0.6),
+      -8px -8px 24px -10px rgba(255, 255, 255, 0.03),
+      /* Soft inner highlight */
+      inset 2px 2px 5px rgba(255, 255, 255, 0.08),
+      /* Inner shadow for thickness */
+      inset -2px -2px 10px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Elevated puffy buttons */
+  .clay-btn {
+    @apply relative bg-primary text-primary-foreground rounded-2xl transition-all duration-200;
+    box-shadow: 
+      /* Drop shadow */
+      4px 6px 14px -3px rgba(var(--primary), 0.4),
+      /* Inner top highlight (makes it puffy) */
+      inset 2px 4px 8px -2px rgba(255, 255, 255, 0.5),
+      /* Inner bottom shadow (3D thickness) */
+      inset -2px -4px 8px -2px rgba(0, 0, 0, 0.15);
+  }
+  
+  .clay-btn:active {
+    transform: scale(0.96) translateY(2px);
+    box-shadow: 
+      1px 2px 4px -1px rgba(var(--primary), 0.4),
+      inset 1px 2px 4px -1px rgba(255, 255, 255, 0.3),
+      inset -1px -2px 4px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .clay-btn {
+    box-shadow: 
+      5px 8px 16px -3px rgba(0, 0, 0, 0.5),
+      inset 2px 4px 8px -2px rgba(255, 255, 255, 0.25),
+      inset -2px -4px 8px -2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Inset/pressed fields (for inputs, track areas) */
+  .clay-inset {
+    @apply bg-muted/50 rounded-2xl border-0;
+    box-shadow: 
+      inset 4px 4px 10px rgba(0, 0, 0, 0.06),
+      inset -4px -4px 10px rgba(255, 255, 255, 0.8);
+  }
+
+  .dark .clay-inset {
+    @apply bg-background border-0;
+    box-shadow: 
+      inset 4px 4px 10px rgba(0, 0, 0, 0.4),
+      inset -2px -2px 8px rgba(255, 255, 255, 0.03);
+  }
+
+  /* 3D Animations */
+  .hover-float {
+    @apply transition-transform duration-300;
+  }
+  .hover-float:hover {
+    transform: translateY(-4px) scale(1.02);
+  }
 }
+
+/* Base styles and smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Blob Animations for Login/Signup Background */
+@keyframes blob1 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes blob2 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(-50px, 30px) scale(0.9); }
+  66% { transform: translate(20px, -20px) scale(1.1); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-blob1 { animation: blob1 10s infinite alternate ease-in-out; }
+.animate-blob2 { animation: blob2 12s infinite alternate ease-in-out; }

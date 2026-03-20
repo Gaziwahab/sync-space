@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, User as UserIcon } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
 interface ProfileDropdownProps {
@@ -38,7 +38,7 @@ export function ProfileDropdown({ user }: ProfileDropdownProps) {
   const avatarUrl = profile?.avatar_url;
 
   const initials = displayName
-    ? displayName.slice(0, 2).toUpperCase()
+    ? displayName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()
     : (user?.email?.slice(0, 2).toUpperCase() ?? "U");
 
   const handleLogout = async () => {
@@ -49,27 +49,47 @@ export function ProfileDropdown({ user }: ProfileDropdownProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring">
-          <Avatar className="h-8 w-8 cursor-pointer">
-            {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" />}
-            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+        <button className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-transform hover:scale-105 active:scale-95">
+          <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-primary/20 shadow-md">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" className="object-cover" />}
+            <AvatarFallback className="text-sm bg-gradient-to-br from-primary to-accent text-white font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="text-sm font-medium">{displayName ?? "My Account"}</p>
-          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+      <DropdownMenuContent align="end" className="w-64 clay-card border-0 p-2 mt-2">
+        <DropdownMenuLabel className="p-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt="Avatar" className="object-cover" />}
+              <AvatarFallback className="text-sm bg-gradient-to-br from-primary to-accent text-white font-bold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate">{displayName ?? "My Account"}</p>
+              <p className="text-xs text-muted-foreground truncate font-mono mt-0.5">{user?.email}</p>
+            </div>
+          </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/dashboard/settings")}>
-          <Settings className="mr-2 h-4 w-4" /> Settings
+        
+        <DropdownMenuSeparator className="bg-border/50 my-1.5" />
+        
+        <DropdownMenuItem 
+          onClick={() => navigate("/dashboard/settings")}
+          className="rounded-xl px-3 py-2.5 cursor-pointer hover:bg-muted/50 focus:bg-primary/10 focus:text-primary transition-colors mb-1"
+        >
+          <Settings className="mr-3 h-4 w-4" /> 
+          <span className="font-medium">Settings & API Keys</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> Logout
+        
+        <DropdownMenuItem 
+          onClick={handleLogout}
+          className="rounded-xl px-3 py-2.5 cursor-pointer hover:bg-destructive/10 focus:bg-destructive/20 text-destructive focus:text-destructive transition-colors mt-2"
+        >
+          <LogOut className="mr-3 h-4 w-4" /> 
+          <span className="font-medium">Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

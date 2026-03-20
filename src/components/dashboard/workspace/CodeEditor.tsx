@@ -1,9 +1,13 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import {
   FileCode, File, Folder, FolderOpen, ChevronRight, ChevronDown,
-  FileJson, FileText, FileType, Image, Settings, X,
+  FileJson, FileText, FileType, Image, Settings, X, Plus, Copy, Download,
 } from "lucide-react";
 
 interface ProjectFile {
@@ -19,6 +23,7 @@ interface CodeEditorProps {
   activeFile: string | null;
   onSelectFile: (path: string) => void;
   onFileChange?: (filePath: string, content: string) => void;
+  onCreateFile?: (filePath: string) => void;
 }
 
 interface TreeNode {
@@ -110,12 +115,14 @@ function FileTreeItem({ node, activeFile, onSelectFile, depth = 0 }: {
   );
 }
 
-export function CodeEditor({ files, activeFile, onSelectFile, onFileChange }: CodeEditorProps) {
+export function CodeEditor({ files, activeFile, onSelectFile, onFileChange, onCreateFile }: CodeEditorProps) {
   const currentFile = files.find((f) => f.file_path === activeFile);
   const fileTree = useMemo(() => buildFileTree(files), [files]);
   const language = activeFile ? getLanguage(activeFile) : "plaintext";
   const [openTabs, setOpenTabs] = useState<string[]>([]);
   const [showExplorer, setShowExplorer] = useState(true);
+  const [showNewFile, setShowNewFile] = useState(false);
+  const [newFileName, setNewFileName] = useState("");
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const tabs = useMemo(() => {
@@ -153,21 +160,78 @@ export function CodeEditor({ files, activeFile, onSelectFile, onFileChange }: Co
       if (activeFile && onFileChange) {
         const value = editor.getValue();
         onFileChange(activeFile, value);
+        toast.success("File saved");
       }
     });
+  };
+
+  const handleCreateFile = () => {
+    if (!newFileName.trim() || !onCreateFile) return;
+    const path = newFileName.startsWith("/") ? newFileName.slice(1) : newFileName;
+    onCreateFile(path);
+    setNewFileName("");
+    setShowNewFile(false);
+    toast.success("File created");
+  };
+
+  const handleCopy = () => {
+    if (currentFile) {
+      navigator.clipboard.writeText(currentFile.content);
+      toast.success("Copied to clipboard");
+    }
+  };
+
+  const handleDownload = () => {
+    if (currentFile) {
+      const blob = new Blob([currentFile.content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = currentFile.file_path.split("/").pop() || "file.txt";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
     <div className="flex h-full bg-[#1e1e1e]">
       {/* File Explorer Sidebar */}
       {showExplorer && (
-        <div className="w-48 border-r border-[#333] flex flex-col shrink-0 bg-[#252526]">
-          <div className="px-3 py-1.5 border-b border-[#333] flex items-center justify-between">
+        <div className="w-56 border-r border-[#333] flex flex-col shrink-0 bg-[#252526]">
+          <div className="px-3 py-2 border-b border-[#333] flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-[#bbbbbb]">Explorer</span>
-            <button onClick={() => setShowExplorer(false)} className="text-[#888] hover:text-[#ccc]">
-              <X className="h-3 w-3" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setShowNewFile(true)} 
+                className="p-1 text-[#888] hover:text-[#fff] hover:bg-[#333] rounded"
+                title="New File"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => setShowExplorer(false)} className="p-1 text-[#888] hover:text-[#ccc] hover:bg-[#333] rounded">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
+          {showNewFile && (
+            <div className="p-2 border-b border-[#333] bg-[#1e1e1e]">
+              <div className="flex items-center gap-1">
+                <Input
+                  autoFocus
+                  value={newFileName}
+                  onChange={(e) => setNewFileName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateFile();
+                    if (e.key === "Escape") setShowNewFile(false);
+                  }}
+                  placeholder="filename.ext"
+                  className="h-6 text-[11px] bg-[#2d2d2d] border-[#444] text-[#fff] px-2 rounded-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+                />
+              </div>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto py-1">
             {files.length === 0 ? (
               <div className="px-3 py-6 text-center">
@@ -219,10 +283,30 @@ export function CodeEditor({ files, activeFile, onSelectFile, onFileChange }: Co
         <div className="flex-1 relative">
           {currentFile ? (
             <>
-              <div className="absolute top-1 right-3 z-10">
-                <Badge variant="secondary" className="text-[9px] bg-[#333] text-[#aaa] border-[#444]">
+              <div className="absolute top-2 right-4 z-10 flex items-center gap-2">
+                <Badge variant="secondary" className="text-[9px] bg-[#333] text-[#aaa] border-[#444] px-2 py-0">
                   {currentFile.updated_by_agent}
                 </Badge>
+                <div className="flex items-center gap-1 bg-[#252526] border border-[#333] rounded-md p-0.5 shadow-sm">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[#aaa] hover:text-[#fff] hover:bg-[#333]" onClick={handleCopy}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">Copy Code</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-[#aaa] hover:text-[#fff] hover:bg-[#333]" onClick={handleDownload}>
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">Download File</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
               <Editor
                 height="100%"

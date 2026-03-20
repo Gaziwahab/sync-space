@@ -1,18 +1,30 @@
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
-import { Button } from "@/components/ui/button";
 
-const ThemeToggle = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<typeof Button>>(
+const ThemeToggle = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button">>(
   (props, ref) => {
     const { theme, toggleTheme } = useTheme();
+    const isDark = theme === "dark";
 
     return (
-      <Button ref={ref} variant="ghost" size="icon" onClick={toggleTheme} className="relative" {...props}>
-        <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-        <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        <span className="sr-only">Toggle theme</span>
-      </Button>
+      <button
+        ref={ref}
+        onClick={toggleTheme}
+        className={`relative inline-flex h-8 w-14 shrinking-0 cursor-pointer items-center rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 clay-inset ${isDark ? "bg-primary/20" : "bg-muted"}`}
+        aria-label="Toggle theme"
+        {...props}
+      >
+        <div
+          className={`pointer-events-none absolute left-0.5 top-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-card shadow-sm transition-transform duration-300 ease-in-out ${isDark ? "translate-x-6 bg-primary text-primary-foreground" : "translate-x-0"}`}
+        >
+          {isDark ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4 text-amber-500" />
+          )}
+        </div>
+      </button>
     );
   }
 );

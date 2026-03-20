@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Bot, Send, Loader2, X } from "lucide-react";
+import { Bot, Send, Loader2, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import type { Agent } from "./AgentCard";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -85,13 +87,44 @@ export function AgentChatPanel({ agent, onClose }: AgentChatPanelProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Load memory from localStorage
   useEffect(() => {
-    setMessages([]);
+    if (agent?.id) {
+      const saved = localStorage.getItem(`agent-chat-${agent.id}`);
+      if (saved) {
+        try {
+          setMessages(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse agent memory", e);
+          setMessages([]);
+        }
+      } else {
+        setMessages([]);
+      }
+    } else {
+      setMessages([]);
+    }
     setInput("");
   }, [agent?.id]);
+
+  // Save memory to localStorage
+  useEffect(() => {
+    if (agent?.id && messages.length > 0) {
+      localStorage.setItem(`agent-chat-${agent.id}`, JSON.stringify(messages));
+    }
+  }, [messages, agent?.id]);
+
+  const clearMemory = () => {
+    if (agent?.id) {
+      localStorage.removeItem(`agent-chat-${agent.id}`);
+      setMessages([]);
+      toast.success("Agent memory cleared");
+    }
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -108,6 +141,36 @@ export function AgentChatPanel({ agent, onClose }: AgentChatPanelProps) {
     let assistantSoFar = "";
     const controller = new AbortController();
     abortRef.current = controller;
+
+    if (isDemoMode) {
+      // Simulate demo mode response
+      setTimeout(() => {
+        const demoResponses = [
+          "This is a demo response running locally.",
+          "I've analyzed your request in Demo Mode! 🚀",
+          "This is just a simulated reply to save credits.",
+          "Demo mode active. No API calls were made."
+        ];
+        const randomResp = demoResponses[Math.floor(Math.random() * demoResponses.length)];
+        let i = 0;
+        const interval = setInterval(() => {
+          assistantSoFar += randomResp.charAt(i);
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return prev.map((m, idx) => idx === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
+            }
+            return [...prev, { role: "assistant", content: assistantSoFar }];
+          });
+          i++;
+          if (i >= randomResp.length) {
+            clearInterval(interval);
+            setIsLoading(false);
+          }
+        }, 50);
+      }, 500);
+      return;
+    }
 
     try {
       await streamChat({
@@ -138,17 +201,29 @@ export function AgentChatPanel({ agent, onClose }: AgentChatPanelProps) {
   return (
     <Sheet open={!!agent} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="sm:max-w-lg flex flex-col p-0">
-        <SheetHeader className="p-4 border-b border-border">
-          <div className="flex items-center justify-between">
+        <SheetHeader className="p-4 border-b border-border bg-muted/20">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
               <SheetTitle className="text-base">{agent?.name ?? "Agent"}</SheetTitle>
+              {isDemoMode && <span className="text-[9px] bg-blue-500/20 text-blue-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Demo</span>}
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={clearMemory} title="Clear Memory" className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground font-mono">{agent?.model.split("/").pop()}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground font-mono">{agent?.model.split("/").pop()}</p>
+            <div className="flex items-center gap-2">
+              <Switch id="demo-mode" checked={isDemoMode} onCheckedChange={setIsDemoMode} className="scale-75" />
+              <Label htmlFor="demo-mode" className="text-xs cursor-pointer text-muted-foreground">Demo Mode</Label>
+            </div>
+          </div>
         </SheetHeader>
 
         <ScrollArea className="flex-1 p-4">

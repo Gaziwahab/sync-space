@@ -22,6 +22,7 @@ interface GroupChatProps {
   isBuilding: boolean;
   onStartBuild: () => void;
   onUserMessage?: (message: string) => void;
+  onApplyCode?: (code: string) => void;
 }
 
 const roleConfig: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
@@ -48,7 +49,7 @@ function renderContent(content: string) {
   });
 }
 
-export function GroupChat({ messages, isBuilding, onStartBuild, onUserMessage }: GroupChatProps) {
+export function GroupChat({ messages, isBuilding, onStartBuild, onUserMessage, onApplyCode }: GroupChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [userInput, setUserInput] = useState("");
 
@@ -118,13 +119,13 @@ export function GroupChat({ messages, isBuilding, onStartBuild, onUserMessage }:
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div className={`text-[12px] leading-relaxed rounded-lg p-2 whitespace-pre-wrap break-words max-h-48 overflow-y-auto ${
+                  <div className={`text-[12px] leading-relaxed rounded-lg px-2 py-1 flex flex-col gap-2 ${
                     isUser ? "bg-primary/10" : "bg-muted/40 border border-border/50"
                   }`}>
-                    {msg.content.length > 600 ? (
-                      <CollapsibleMessage content={msg.content} />
+                    {msg.content.length > 2000 ? (
+                      <CollapsibleMessage content={msg.content} onApplyCode={onApplyCode} />
                     ) : (
-                      renderContent(msg.content)
+                      renderMessageBlocks(msg.content, onApplyCode)
                     )}
                   </div>
                 </div>
@@ -168,20 +169,65 @@ export function GroupChat({ messages, isBuilding, onStartBuild, onUserMessage }:
   );
 }
 
-function CollapsibleMessage({ content }: { content: string }) {
+function renderMessageBlocks(content: string, onApplyCode?: (code: string) => void) {
+  // Simple markdown parser to separate code blocks from text
+  const parts = content.split(/(```[\w]*\n[\s\S]*?\n```)/g);
+  return (
+    <div className="flex flex-col gap-1 w-full max-h-[400px] overflow-y-auto px-1 py-1">
+      {parts.map((part, i) => {
+        if (part.startsWith('```') && part.endsWith('```')) {
+          const lines = part.split('\n');
+          const language = lines[0].replace('```', '').trim();
+          const code = lines.slice(1, -1).join('\n');
+          return (
+            <div key={i} className="my-2 rounded-md border border-border overflow-hidden bg-background">
+              <div className="flex items-center justify-between px-3 py-1 bg-muted/50 border-b border-border">
+                <span className="text-[10px] font-mono text-muted-foreground">{language || 'code'}</span>
+                {onApplyCode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] px-2 hover:bg-primary hover:text-primary-foreground clay-panel shadow-none"
+                    onClick={() => {
+                      onApplyCode(code);
+                      toast.success("Code applied to active file");
+                    }}
+                  >
+                    <Code className="h-3 w-3 mr-1" />
+                    Apply Code
+                  </Button>
+                )}
+              </div>
+              <pre className="p-3 text-[11px] font-mono overflow-x-auto whitespace-pre">
+                {code}
+              </pre>
+            </div>
+          );
+        }
+        return (
+          <div key={i} className="whitespace-pre-wrap break-words">
+            {renderContent(part)}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CollapsibleMessage({ content, onApplyCode }: { content: string, onApplyCode?: (code: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   const displayContent = expanded ? content : content.slice(0, 500);
 
   return (
-    <>
-      {renderContent(displayContent)}
+    <div className="flex flex-col">
+      {renderMessageBlocks(displayContent, onApplyCode)}
       {!expanded && "..."}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="block text-primary text-[10px] mt-1 hover:underline"
+        className="self-start text-primary text-[10px] mt-1 hover:underline font-medium"
       >
-        {expanded ? "Show less" : "Show more"}
+        {expanded ? "Show less" : "Read full summary"}
       </button>
-    </>
+    </div>
   );
 }

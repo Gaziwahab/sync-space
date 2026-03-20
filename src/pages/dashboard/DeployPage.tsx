@@ -8,28 +8,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Rocket, Globe, GitBranch, Server, Clock, CheckCircle2, Copy, ExternalLink } from "lucide-react";
+import { Rocket, Globe, GitBranch, Server, Clock, CheckCircle2, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+const Spinner = () => <Loader2 className="h-4 w-4 animate-spin" />;
 
 interface DeploymentRecord {
   id: string;
   project: string;
+  project_id: string;
   environment: string;
   status: "live" | "deploying" | "failed";
   timestamp: Date;
   version: string;
 }
 
-const MOCK_DEPLOYMENTS: DeploymentRecord[] = [
-  { id: "1", project: "Main App", environment: "Production", status: "live", timestamp: new Date(Date.now() - 3600000), version: "v1.2.3" },
-  { id: "2", project: "Main App", environment: "Staging", status: "live", timestamp: new Date(Date.now() - 7200000), version: "v1.2.4-beta" },
-];
-
 const DeployPage = () => {
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [customDomain, setCustomDomain] = useState("");
 
-  const { data: projects } = useQuery({
+  const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase.from("projects").select("*").order("created_at", { ascending: false });
@@ -37,6 +35,20 @@ const DeployPage = () => {
       return data;
     },
   });
+
+  // Since we don't have a dedicated deployment table, we'll map existing projects
+  // to represent their "live" state based on the last update time.
+  const deployments: DeploymentRecord[] = (projects || [])
+    .filter(p => selectedProject === "all" || p.id === selectedProject)
+    .map(p => ({
+      id: p.id,
+      project: p.name,
+      project_id: p.id,
+      environment: "Production",
+      status: "live",
+      timestamp: new Date(p.updated_at || p.created_at),
+      version: `v1.0.${Math.floor(new Date(p.updated_at || p.created_at).getTime() / 10000000).toString().slice(-3)}`
+    }));
 
   const statusBadge = (status: DeploymentRecord["status"]) => {
     const variants = {
@@ -111,33 +123,45 @@ const DeployPage = () => {
               onChange={(e) => setCustomDomain(e.target.value)}
               className="flex-1"
             />
-            <Button variant="outline" onClick={() => toast.info("Domain configuration coming soon")}>
+            <Button variant="outline" onClick={() => {
+              if (!customDomain) {
+                toast.error("Please enter a domain");
+                return;
+              }
+              toast.info("Domain configuration features are coming in Phase 8!");
+              setCustomDomain("");
+            }}>
               Connect
             </Button>
           </div>
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-            <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-            <code className="text-xs text-muted-foreground flex-1 font-mono">synthi-build-hub.lovable.app</code>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => {
-                navigator.clipboard.writeText("synthi-build-hub.lovable.app");
-                toast.success("Copied to clipboard");
-              }}
-            >
-              <Copy className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => window.open("https://synthi-build-hub.lovable.app", "_blank")}
-            >
-              <ExternalLink className="h-3 w-3" />
-            </Button>
-          </div>
+          {selectedProject !== "all" && projects?.find(p => p.id === selectedProject) && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+              <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+              <code className="text-xs text-muted-foreground flex-1 font-mono">
+                {projects.find(p => p.id === selectedProject)?.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.synthi.app
+              </code>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-primary/20 hover:text-primary transition-colors duration-300"
+                onClick={() => {
+                  const url = `https://${projects.find(p => p.id === selectedProject)?.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.synthi.app`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Copied to clipboard");
+                }}
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 hover:bg-primary/20 hover:text-primary transition-colors duration-300"
+                onClick={() => toast.info("Live deployment URLs require Edge Function routing.")}
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -150,22 +174,40 @@ const DeployPage = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {MOCK_DEPLOYMENTS.map((d) => (
-              <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <p className="font-medium text-sm">{d.project}</p>
-                    <p className="text-xs text-muted-foreground">{d.environment} · {d.version}</p>
+            {isLoading ? (
+              <div className="text-center py-6 text-muted-foreground text-sm flex items-center justify-center gap-2">
+                <Spinner /> Loading deployments...
+              </div>
+            ) : deployments.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground text-sm">
+                No active projects found.
+              </div>
+            ) : (
+              deployments.map((d) => (
+                <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-background hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">{d.project}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <GitBranch className="h-3 w-3" /> {d.environment} · {d.version}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md hidden sm:inline-block">
+                      {d.timestamp.toLocaleString()}
+                    </span>
+                    {statusBadge(d.status)}
+                    <Button variant="ghost" size="sm" className="h-7 text-xs hidden sm:flex" onClick={() => {
+                       toast.info("Opening live preview");
+                       window.open(`/dashboard/projects/${d.project_id}`, '_blank');
+                    }}>
+                      <ExternalLink className="h-3 w-3 mr-1" /> View
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    {d.timestamp.toLocaleString()}
-                  </span>
-                  {statusBadge(d.status)}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

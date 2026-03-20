@@ -18,6 +18,7 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import Overview from "./pages/dashboard/Overview";
 import ProjectWorkspace from "./pages/dashboard/ProjectWorkspace";
 import NotFound from "./pages/NotFound";
+import { ApiKeyProvider } from "./contexts/ApiKeyContext";
 
 const queryClient = new QueryClient();
 
@@ -26,26 +27,28 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/dashboard" element={<Dashboard />}>
-            <Route index element={<Overview />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="prompt-builder" element={<PromptBuilder />} />
-            <Route path="agents" element={<AIAgents />} />
-            <Route path="debug" element={<DebugConsole />} />
-            <Route path="deploy" element={<DeployPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="/dashboard/projects/:id" element={<ProjectWorkspace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <ApiKeyProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/dashboard" element={<Dashboard />}>
+              <Route index element={<Overview />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="prompt-builder" element={<PromptBuilder />} />
+              <Route path="agents" element={<AIAgents />} />
+              <Route path="debug" element={<DebugConsole />} />
+              <Route path="deploy" element={<DeployPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="/dashboard/projects/:id" element={<ProjectWorkspace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </ApiKeyProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -48,19 +48,19 @@ const AgentFlowVisual = () => {
                 transition={{ delay: agent.delay * 0.5, duration: 0.5 }}
               >
                 {/* Desk card */}
-                <div className="glass rounded-xl p-4 flex flex-col items-center gap-3 w-28 hover:glow-primary transition-shadow duration-300">
-                  <div className={`w-12 h-12 rounded-lg bg-${agent.color}/10 flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 text-${agent.color}`} />
+                <div className="clay-panel rounded-2xl p-5 flex flex-col items-center gap-3 w-32 shadow-xl hover:-translate-y-2 transition-transform duration-300 relative group interactive">
+                  <div className={`w-14 h-14 rounded-xl bg-${agent.color}/10 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
+                    <Icon className={`w-7 h-7 text-${agent.color}`} />
                   </div>
-                  <span className="text-sm font-medium">{agent.label}</span>
+                  <span className="text-sm font-bold tracking-tight">{agent.label}</span>
                   
                   {/* Speech bubble */}
                   <motion.div
-                    className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-card border border-border text-[10px] text-muted-foreground whitespace-nowrap"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium whitespace-nowrap shadow-xl"
+                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: agent.delay * 0.5 + 0.8 }}
+                    transition={{ delay: agent.delay * 0.5 + 0.8, type: "spring" }}
                   >
                     {i === 0 && "✍️ Describe it"}
                     {i === 1 && "📋 Assigning..."}
@@ -68,20 +68,23 @@ const AgentFlowVisual = () => {
                     {i === 3 && "⚡ Coding..."}
                     {i === 4 && "🔍 Checking..."}
                     {i === 5 && "🚀 Live!"}
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-card border-r border-b border-border" />
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-foreground" />
                   </motion.div>
                 </div>
 
                 {/* Arrow between agents */}
                 {i < agents.length - 1 && (
                   <motion.div
-                    className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-muted-foreground/40"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
+                    className="hidden sm:block absolute right-[-20%] top-1/2 -translate-y-1/2 text-primary/40 z-0"
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: agent.delay * 0.5 + 0.4 }}
                   >
-                    →
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
                   </motion.div>
                 )}
               </motion.div>

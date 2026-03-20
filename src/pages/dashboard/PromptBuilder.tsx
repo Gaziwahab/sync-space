@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Play, Save, ChevronDown, Trash2, Loader2, Variable, History, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
-import { ModelSelector, SavePromptDialog } from "@/components/dashboard/prompt/PromptControls";
+import { SavePromptDialog } from "@/components/dashboard/prompt/PromptControls";
+import { useApiKeyContext } from "@/contexts/ApiKeyContext";
 import { PromptTestPanel } from "@/components/dashboard/prompt/PromptTestPanel";
 import { PromptVersionsPanel } from "@/components/dashboard/prompt/PromptVersionsPanel";
 
@@ -47,7 +48,7 @@ const PromptBuilder = () => {
   const navigate = useNavigate();
   const [systemPrompt, setSystemPrompt] = useState("You are a helpful AI assistant.");
   const [userTemplate, setUserTemplate] = useState("");
-  const [model, setModel] = useState("google/gemini-3-flash-preview");
+  const { selectedKeyId, selectedModel } = useApiKeyContext();
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<Msg[]>([]);
   const [followUp, setFollowUp] = useState("");
@@ -79,7 +80,7 @@ const PromptBuilder = () => {
         name,
         system_prompt: systemPrompt,
         user_message_template: userTemplate,
-        model,
+        model: selectedModel || "default-model",
         variables: detectedVars,
         user_id: user.id,
       };
@@ -112,7 +113,7 @@ const PromptBuilder = () => {
           version_number: nextVersion,
           system_prompt: systemPrompt,
           user_message_template: userTemplate,
-          model,
+          model: selectedModel || "default-model",
           variables: detectedVars,
           user_id: user.id,
         });
@@ -145,7 +146,6 @@ const PromptBuilder = () => {
   const loadPrompt = (p: Prompt) => {
     setSystemPrompt(p.system_prompt);
     setUserTemplate(p.user_message_template);
-    setModel(p.model);
     setActivePromptId(p.id);
     setActivePromptName(p.name);
     setVariableValues({});
@@ -156,15 +156,28 @@ const PromptBuilder = () => {
     setIsStreaming(true);
     let assistantSoFar = "";
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ messages: allMessages, systemPrompt, model }),
-      });
-      if (!resp.ok) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const token = session?.access_token || anonKey;
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+            "apikey": anonKey,
+            "X-Client-Info": "synthi-build-hub"
+          },
+          body: JSON.stringify({
+            messages: allMessages,
+            systemPrompt,
+            model: selectedModel,
+            global_api_key_id: selectedKeyId
+          }),
+        }
+      );if (!resp.ok) {
         const err = await resp.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(err.error || `Error ${resp.status}`);
       }
@@ -184,7 +197,14 @@ const PromptBuilder = () => {
           const json = line.slice(6).trim();
           if (json === "[DONE]") break;
           try {
-            const content = JSON.parse(json).choices?.[0]?.delta?.content;
+            const parsed = JSON.parse(json);
+            // OpenAI / OpenRouter format
+            let content = parsed.choices?.[0]?.delta?.content;
+            // Gemini format
+            if (!content) {
+              content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+            }
+
             if (content) {
               assistantSoFar += content;
               setMessages((prev) => {
@@ -205,7 +225,7 @@ const PromptBuilder = () => {
       toast.error(e.message);
     }
     setIsStreaming(false);
-  }, [systemPrompt, model]);
+  }, [systemPrompt, selectedModel]);
 
   const handleRun = () => {
     const resolved = interpolate(userTemplate, variableValues);
@@ -263,10 +283,9 @@ const PromptBuilder = () => {
               <History className="h-4 w-4 mr-1" /> Versions
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => setSaveOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setSaveOpen(true)} className="clay-panel border-white/10 hover:border-primary/50">
             <Save className="h-4 w-4 mr-1" /> Save
           </Button>
-          <ModelSelector value={model} onChange={setModel} />
         </div>
       </div>
 
@@ -279,7 +298,7 @@ const PromptBuilder = () => {
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Define the agent's behavior..."
               rows={4}
-              className="font-mono text-sm resize-none"
+              className="font-mono text-sm resize-none bg-background border-border/50 shadow-inner focus-visible:ring-primary/50 rounded-xl"
             />
           </div>
           <div className="space-y-2">
@@ -294,11 +313,11 @@ const PromptBuilder = () => {
               onChange={(e) => setUserTemplate(e.target.value)}
               placeholder="e.g. Summarize this article about {{topic}} in {{style}} style"
               rows={5}
-              className="font-mono text-sm resize-none"
+              className="font-mono text-sm resize-none bg-background border-border/50 shadow-inner focus-visible:ring-primary/50 rounded-xl"
             />
           </div>
           {detectedVars.length > 0 && (
-            <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/30">
+            <div className="space-y-3 p-4 rounded-2xl border border-white/5 bg-muted/20 clay-panel mt-2">
               <div className="flex items-center gap-2">
                 <Variable className="h-4 w-4 text-primary" />
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">Variables</Label>
@@ -318,13 +337,14 @@ const PromptBuilder = () => {
               </div>
             </div>
           )}
-          <div className="flex gap-2">
-            <Button onClick={handleRun} disabled={isStreaming} className="flex-1">
-              {isStreaming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
-              Run Prompt
+          <div className="flex gap-3 mt-4">
+            <Button onClick={handleRun} disabled={isStreaming} className="flex-1 clay-btn py-6 shadow-lg hover:shadow-xl transition-all">
+              {isStreaming ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Play className="h-5 w-5 mr-2" />}
+              <span className="text-base font-semibold">Run Prompt</span>
             </Button>
             <Button
               variant="outline"
+              className="clay-panel hover:bg-muted/50 transition-colors py-6"
               onClick={async () => {
                 try {
                   const { data: { user } } = await supabase.auth.getUser();
@@ -377,7 +397,6 @@ const PromptBuilder = () => {
         onRestore={(v) => {
           setSystemPrompt(v.system_prompt);
           setUserTemplate(v.user_message_template);
-          setModel(v.model);
         }}
       />
     </div>

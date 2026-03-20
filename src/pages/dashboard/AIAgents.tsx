@@ -44,7 +44,7 @@ const AIAgents = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (input: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null }) => {
+    mutationFn: async (input: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null; api_key_id: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase.from("agents").insert({
@@ -63,7 +63,7 @@ const AIAgents = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (input: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null }) => {
+    mutationFn: async (input: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null; api_key_id: string | null }) => {
       if (!editing) return;
       const { error } = await supabase
         .from("agents")
@@ -93,7 +93,7 @@ const AIAgents = () => {
     onError: (e) => toast.error(e.message),
   });
 
-  const handleSubmit = (data: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null }) => {
+  const handleSubmit = (data: { name: string; description: string; role: string; system_prompt: string; model: string; project_id: string | null; api_key_id: string | null }) => {
     if (!data.name.trim()) return toast.error("Name is required");
     editing ? updateMutation.mutate(data) : createMutation.mutate(data);
   };
@@ -136,8 +136,18 @@ const AIAgents = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="h-8 w-32 bg-muted animate-pulse rounded-md mb-2"></div>
+            <div className="h-4 w-64 bg-muted animate-pulse rounded-md"></div>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-40 bg-muted/50 animate-pulse rounded-xl border border-border"></div>
+          ))}
+        </div>
       </div>
     );
   }
